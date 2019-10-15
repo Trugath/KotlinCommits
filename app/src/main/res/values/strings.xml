@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Kotlin Commits</string>
+    <string name="avatar">Avatar</string>
+    <string name="failed_update">Failed to update commits</string>
+</resources>
