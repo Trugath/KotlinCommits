@@ -1,9 +1,11 @@
 package com.trugath.kotlincommits.github.api.commitLog
 
+import com.trugath.kotlincommits.github.api.ErrorResponse
 import com.trugath.kotlincommits.github.api.Request
 import com.trugath.kotlincommits.github.api.Response
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import org.json.JSONException
 
 class CommitLogRequest(
     private val owner: String,
@@ -24,6 +26,10 @@ class CommitLogRequest(
     }
 
     override fun process(response: String): Response {
-        return CommitLogResponseImpl(response)
+        return try {
+            CommitLogResponseImpl(response)
+        } catch(e: JSONException) {
+            ErrorResponse()
+        }
     }
 }

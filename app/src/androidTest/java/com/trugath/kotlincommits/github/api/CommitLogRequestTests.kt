@@ -75,6 +75,28 @@ class CommitLogRequestTests {
     fun mockedEmptyResponse() {
         val mockRequester = object : Requester {
             override suspend fun request(request: Request): Response {
+                val response = """"""
+                return request.process(response)
+            }
+        }
+
+        val response = runBlocking {
+            (mockRequester.request(
+                CommitLogRequest(
+                    "JetBrains",
+                    "kotlin",
+                    null,
+                    null
+                )
+            ))
+        }
+        assert(response is ErrorResponse)
+    }
+
+    @Test
+    fun mockedEmptyArrayResponse() {
+        val mockRequester = object : Requester {
+            override suspend fun request(request: Request): Response {
                 val response = """[]"""
                 return request.process(response)
             }
@@ -98,19 +120,11 @@ class CommitLogRequestTests {
         val mockRequester = object : Requester {
             override suspend fun request(request: Request): Response {
                 val response = """[{
-	"sha": "1111111111111111111111111111111111111111",
-	"commit": {
-		"author": {
-			"name": "author name"
-		},
-		"committer": {
-			"date": "2019-02-03T04:05:06Z"
-		},
-		"message": "Commit Message"
-	},
-	"author": null,
-	"committer": null
-}]"""
+                    "sha": "1111111111111111111111111111111111111111",
+                    "commit": {"author": {"name": "author name"},"committer": {"date": "2019-02-03T04:05:06Z"},"message": "Commit Message"},
+                    "author": null,
+                    "committer": null
+                    }]"""
                 return request.process(response)
             }
         }
@@ -142,21 +156,11 @@ class CommitLogRequestTests {
         val mockRequester = object : Requester {
             override suspend fun request(request: Request): Response {
                 val response = """[{
-	"sha": "1111111111111111111111111111111111111111",
-	"commit": {
-		"author": {
-			"name": "author name"
-		},
-		"committer": {
-			"date": "2019-02-03T04:05:06Z"
-		},
-		"message": "Commit Message"
-	},
-	"author": {
-      "avatar_url": "https://example.com/authorAvatar.gif"
-    },
-	"committer": null
-}]"""
+                    "sha": "1111111111111111111111111111111111111111",
+                    "commit": {"author": {"name": "author name"},"committer": {"date": "2019-02-03T04:05:06Z"},"message": "Commit Message"},
+                    "author": {"avatar_url": "https://example.com/authorAvatar.gif"},
+                    "committer": null
+                    }]"""
                 return request.process(response)
             }
         }
@@ -179,6 +183,53 @@ class CommitLogRequestTests {
             authorAvatar = "https://example.com/authorAvatar.gif",
             authorName = "author name",
             timeStamp = timeFormatter.parseDateTime("2019-02-03T04:05:06Z")
+        )), response)
+    }
+
+    @Test
+    fun mockedResponseList() {
+        val mockRequester = object : Requester {
+            override suspend fun request(request: Request): Response {
+                val response = """[{
+                    "sha": "1111111111111111111111111111111111111111",
+                    "commit": {"author": {"name": "author name"},"committer": {"date": "2019-02-03T04:05:06Z"},"message": "Commit Message"},
+                    "author": {"avatar_url": "https://example.com/authorAvatar.gif"},
+                    "committer": null
+                    },
+                    {
+                    "sha": "1111111111111111111111111111111111111112",
+                    "commit": {"author": {"name": "author name"},"committer": {"date": "2019-02-03T04:05:00Z"},"message": "Commit Message"},
+                    "author": {"avatar_url": "https://example.com/authorAvatar.gif"},
+                    "committer": null
+                    }]"""
+                return request.process(response)
+            }
+        }
+
+        val response = runBlocking {
+            (mockRequester.request(
+                CommitLogRequest(
+                    "JetBrains",
+                    "kotlin",
+                    null,
+                    null
+                )
+            ) as CommitLogResponse).entries()
+        }
+
+        val timeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZ").withZoneUTC()
+        assertEquals(listOf(CommitEntry(
+            sha = "1111111111111111111111111111111111111111",
+            title = "Commit Message",
+            authorAvatar = "https://example.com/authorAvatar.gif",
+            authorName = "author name",
+            timeStamp = timeFormatter.parseDateTime("2019-02-03T04:05:06Z")
+        ), CommitEntry(
+            sha = "1111111111111111111111111111111111111112",
+            title = "Commit Message",
+            authorAvatar = "https://example.com/authorAvatar.gif",
+            authorName = "author name",
+            timeStamp = timeFormatter.parseDateTime("2019-02-03T04:05:00Z")
         )), response)
     }
 }
